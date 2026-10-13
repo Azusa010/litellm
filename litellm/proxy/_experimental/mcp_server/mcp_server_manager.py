@@ -3546,7 +3546,7 @@ class MCPServerManager:
         *,
         allow_all_server_ids: list[str] | None = None,
         submitted_server_ids: list[str] | None = None,
-    ) -> set:
+    ) -> set[str]:
         """Servers reachable through OPEN channels rather than a grant: operator-opened
         ``allow_all_keys`` servers, plus the caller's own active BYOM submissions when the caller
         carries no explicit ``mcp_servers`` scope.

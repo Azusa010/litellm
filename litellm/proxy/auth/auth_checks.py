@@ -5789,12 +5789,24 @@ def personal_key_team_model_access_applies(valid_token: UserAPIKeyAuth | None) -
     )
 
 
+def personal_key_inherits_team_grants(valid_token: UserAPIKeyAuth | None) -> bool:
+    """MCP server, MCP tool and agent inheritance is for a virtual key only. A keyless auth with no
+    team (one grant source of an admitted subject, a JWT user) resolves as the plain caller it is."""
+    return (
+        personal_key_team_model_access_applies(valid_token)
+        and valid_token is not None
+        and valid_token.api_key is not None
+    )
+
+
 async def _load_personal_key_team(
     team_id: str,
     valid_token: UserAPIKeyAuth,
     prisma_client: PrismaClient | None,
     user_api_key_cache: UserApiKeyCache,
     proxy_logging_obj: ProxyLogging,
+    *,
+    check_db_only: bool = False,
 ) -> LiteLLM_TeamTableCachedObj | None:
     try:
         team_object: Final = await get_team_object(
@@ -5803,6 +5815,7 @@ async def _load_personal_key_team(
             user_api_key_cache=user_api_key_cache,
             parent_otel_span=valid_token.parent_otel_span,
             proxy_logging_obj=proxy_logging_obj,
+            check_db_only=check_db_only,
         )
     except Exception as e:  # noqa: BLE001  # fail closed: a team that cannot be loaded grants nothing
         verbose_proxy_logger.warning(
@@ -5818,6 +5831,8 @@ async def _load_personal_key_teams(
     prisma_client: PrismaClient | None,
     user_api_key_cache: UserApiKeyCache,
     proxy_logging_obj: ProxyLogging,
+    *,
+    check_db_only: bool = False,
 ) -> tuple[LiteLLM_TeamTableCachedObj | None, ...]:
     return tuple(
         await asyncio.gather(
@@ -5828,6 +5843,7 @@ async def _load_personal_key_teams(
                     prisma_client=prisma_client,
                     user_api_key_cache=user_api_key_cache,
                     proxy_logging_obj=proxy_logging_obj,
+                    check_db_only=check_db_only,
                 )
                 for team_id in dict.fromkeys(user_object.teams)
             )
@@ -5907,6 +5923,8 @@ async def _personal_key_listing_teams(
     prisma_client: PrismaClient | None,
     user_api_key_cache: UserApiKeyCache | None,
     proxy_logging_obj: ProxyLogging | None,
+    *,
+    check_db_only: bool = False,
 ) -> tuple[LiteLLM_TeamTableCachedObj | None, ...]:
     if (
         user_api_key_dict.user_id is None
@@ -5929,7 +5947,28 @@ async def _personal_key_listing_teams(
         prisma_client=prisma_client,
         user_api_key_cache=user_api_key_cache,
         proxy_logging_obj=proxy_logging_obj,
+        check_db_only=check_db_only,
     )
+
+
+async def personal_key_owner_teams(
+    valid_token: UserAPIKeyAuth,
+    prisma_client: PrismaClient | None,
+    user_api_key_cache: UserApiKeyCache | None,
+    proxy_logging_obj: ProxyLogging | None,
+    *,
+    check_db_only: bool = False,
+) -> tuple[LiteLLM_TeamTableCachedObj, ...]:
+    """The owner's current, loadable, unblocked teams: the grant sources a personal key inherits
+    MCP server, MCP tool and agent access from under ``personal_key_model_access_from_teams``."""
+    teams: Final = await _personal_key_listing_teams(
+        user_api_key_dict=valid_token,
+        prisma_client=prisma_client,
+        user_api_key_cache=user_api_key_cache,
+        proxy_logging_obj=proxy_logging_obj,
+        check_db_only=check_db_only,
+    )
+    return tuple(team for team in teams if team is not None)
 
 
 async def personal_key_team_visible_models(
