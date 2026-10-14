@@ -1689,6 +1689,9 @@ if TYPE_CHECKING:
     from .llms.perplexity.decisions.transformation import (
         PerplexityDecisionsConfig as PerplexityDecisionsConfig,
     )
+    from .llms.nace.decisions.transformation import (
+        NaceDecisionsConfig as NaceDecisionsConfig,
+    )
     from .llms.typesafe.decisions.transformation import (
         TypeSafeDecisionsConfig as TypeSafeDecisionsConfig,
     )
