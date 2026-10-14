@@ -97,7 +97,9 @@ _PROVIDERS: Final = (
     _Provider(
         "strands_decider", "strands_decider/systemone-decider", "/v1/systemone", "systemone-decider", None, False, None
     ),
-    _Provider("hosted_vllm", "hosted_vllm/Qwen/Qwen3-0.6B", "/v1/systemone", "Qwen/Qwen3-0.6B", None, False, None),
+    _Provider(
+        "hosted_vllm", "hosted_vllm/Qwen/Qwen3-0.6B", "/v1/systemone", "Qwen/Qwen3-0.6B", None, False, None
+    ),
     _Provider(
         "fireworks_ai",
         "fireworks_ai/accounts/fireworks/routers/rune",
@@ -591,7 +593,6 @@ async def test_sdk_openrouter_connection_failures_raise_a_connection_error(gatew
         await litellm.asystemone(
             model=_OPENROUTER.model, state=_STATE, questions=_SDK_QUESTIONS, api_base=dead_api_base, api_key=_API_KEY
         )
-
     assert systemone_error.value.llm_provider == "openrouter"
 
 
