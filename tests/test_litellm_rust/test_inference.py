@@ -28,7 +28,7 @@ NativeResult: TypeAlias = (
     | Coroutine[object, object, ModelResponse]
     | Coroutine[object, object, ResponsesAPIResponse]
 )
-RESPONSES_MODEL: Final = "openai/gpt-6-sol"
+RESPONSES_MODEL: Final = "openai/gpt-4.1"
 RESPONSES_RESPONSE: Final[dict[str, JsonValue]] = {
     "id": "resp_native",
     "object": "response",
