@@ -4094,6 +4094,7 @@ dependencies = [
  "litellm-inference-testing",
  "litellm-llms",
  "litellm-llms-types",
+ "litellm-router-types",
  "litellm-secrets",
  "litellm-tracing",
  "reqwest 0.12.28",
