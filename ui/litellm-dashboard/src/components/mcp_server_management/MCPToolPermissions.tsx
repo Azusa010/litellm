@@ -29,6 +29,8 @@ interface MCPToolPermissionsProps {
   onChange: (toolPermissions: Record<string, string[]>) => void;
   disabled?: boolean;
   preserveUnrestrictedServers?: readonly string[];
+  teamId?: string | null;
+  userId?: string | null;
 }
 
 const NO_SELECTION: readonly string[] = [];
@@ -60,13 +62,15 @@ const MCPToolPermissions: React.FC<MCPToolPermissionsProps> = ({
   onChange,
   disabled = false,
   preserveUnrestrictedServers = NO_SELECTION,
+  teamId,
+  userId,
 }) => {
   const {
     data: allServers = [],
     isError: serversFailed,
     isLoading: serversLoading,
     isSuccess: serversLoaded,
-  } = useMCPServers();
+  } = useMCPServers(teamId, userId);
   const { data: populatedAccessGroups = [], isSuccess: accessGroupsLoaded } = useMCPAccessGroups();
   const { data: toolsets = [], isError: toolsetsFailed, isLoading: toolsetsLoading } = useMCPToolsets();
   const [serverTools, setServerTools] = useState<Record<string, MCPTool[]>>({});

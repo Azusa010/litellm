@@ -125,13 +125,19 @@ vi.mock("../mcp_server_management/MCPServerSelector", () => ({
   default: ({
     value,
     onChange,
+    teamId,
+    userId,
   }: {
     value?: { servers?: string[]; accessGroups?: string[]; toolsets?: string[] };
     onChange?: (v: { servers: string[]; accessGroups: string[]; toolsets: string[] }) => void;
+    teamId?: string | null;
+    userId?: string | null;
   }) => (
     <button
       type="button"
       data-testid="mcp-server-selector"
+      data-team-id={teamId ?? ""}
+      data-user-id={userId ?? ""}
       onClick={() => onChange?.({ servers: ["mcp-1"], accessGroups: [], toolsets: value?.toolsets ?? [] })}
     >
       pick mcp server
@@ -1510,6 +1516,64 @@ describe("KeyEditView", () => {
 
       await waitFor(() => {
         expect(screen.getByLabelText("Organization")).toHaveValue("Engineering");
+      });
+    });
+
+    it("scopes the MCP server selector to the key's team and owner", async () => {
+      renderWithProviders(
+        <KeyEditView
+          keyData={{ ...MOCK_KEY_DATA, team_id: "group-maple", user_id: "owner-7" }}
+          onCancel={() => {}}
+          onSubmit={vi.fn()}
+          accessToken=""
+          userID=""
+          userRole="Admin"
+          premiumUser={false}
+        />,
+      );
+
+      const selector = await screen.findByTestId("mcp-server-selector");
+      expect(selector).toHaveAttribute("data-team-id", "group-maple");
+      expect(selector).toHaveAttribute("data-user-id", "owner-7");
+    });
+
+    it("rescopes the MCP server selector and drops stale MCP grants when the team is changed before saving", async () => {
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(
+        <KeyEditView
+          keyData={{
+            ...MOCK_KEY_DATA,
+            organization_id: "org-1",
+            team_id: "group-maple",
+            object_permission: { mcp_servers: ["srv-a"], mcp_tool_permissions: { "srv-a": ["read"] } },
+          }}
+          onCancel={() => {}}
+          onSubmit={onSubmit}
+          accessToken=""
+          userID=""
+          userRole="Admin"
+          premiumUser={false}
+        />,
+      );
+
+      const selector = await screen.findByTestId("mcp-server-selector");
+      expect(selector).toHaveAttribute("data-team-id", "group-maple");
+      await waitFor(() => {
+        expect(screen.getAllByRole("button", { name: "Clear" })).toHaveLength(2);
+      });
+      await userEvent.click(screen.getAllByRole("button", { name: "Clear" })[1]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("mcp-server-selector")).toHaveAttribute("data-team-id", "");
+      });
+      await userEvent.click(screen.getByRole("button", { name: /save changes/i }));
+
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalled();
+      });
+      expect(onSubmit.mock.calls[0][0]).toMatchObject({
+        mcp_servers_and_groups: { servers: [], accessGroups: [], toolsets: [] },
+        mcp_tool_permissions: {},
       });
     });
 

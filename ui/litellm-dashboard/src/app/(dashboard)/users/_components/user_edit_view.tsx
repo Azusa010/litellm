@@ -403,6 +403,7 @@ export function UserEditView({
                     onChange={onChange}
                     value={value}
                     accessToken={accessToken || ""}
+                    userId={isBulkEdit ? null : userData.user_id}
                     placeholder="Select MCP servers or access groups (optional)"
                   />
                 )}
@@ -410,6 +411,7 @@ export function UserEditView({
 
               <MCPToolPermissions
                 accessToken={accessToken || ""}
+                userId={isBulkEdit ? null : userData.user_id}
                 selectedServers={form.watch("mcp_servers_and_groups")?.servers || []}
                 selectedAccessGroups={form.watch("mcp_servers_and_groups")?.accessGroups || []}
                 selectedToolsets={form.watch("mcp_servers_and_groups")?.toolsets || []}

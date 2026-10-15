@@ -22,6 +22,23 @@ describe("MCPToolPermissions", () => {
     vi.mocked(networking.fetchMCPAccessGroups).mockResolvedValue([]);
   });
 
+  it("loads the server catalog scoped to the team and user it was given", async () => {
+    renderWithProviders(
+      <MCPToolPermissions
+        accessToken={mockAccessToken}
+        selectedServers={[]}
+        toolPermissions={{}}
+        onChange={vi.fn()}
+        teamId="team-1"
+        userId="user-1"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(networking.fetchMCPServers).toHaveBeenCalledWith("123", "team-1", undefined, "user-1");
+    });
+  });
+
   it("should update tool permissions when user selects a tool", async () => {
     /**
      * Tests that clicking a tool checkbox calls onChange with updated permissions.
@@ -83,7 +100,7 @@ describe("MCPToolPermissions", () => {
 
     // Verify API calls
     // Note: useMCPServers uses useAuthorized() internally, which returns "123" from global mock
-    expect(networking.fetchMCPServers).toHaveBeenCalledWith("123", undefined);
+    expect(networking.fetchMCPServers).toHaveBeenCalledWith("123", undefined, undefined, undefined);
     // listMCPTools uses the accessToken prop directly
     expect(networking.listMCPTools).toHaveBeenCalledWith(mockAccessToken, mockServerId);
   });

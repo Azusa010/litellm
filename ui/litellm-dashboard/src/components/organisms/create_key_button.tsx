@@ -126,18 +126,27 @@ interface McpToolPermissionsFieldProps {
   readonly accessToken: string;
   readonly control: Control<MountedFormValues>;
   readonly setValue: UseFormSetValue<MountedFormValues>;
+  readonly teamId: string | null;
 }
 
-const McpToolPermissionsField: React.FC<McpToolPermissionsFieldProps> = ({ accessToken, control, setValue }) => {
+const McpToolPermissionsField: React.FC<McpToolPermissionsFieldProps> = ({
+  accessToken,
+  control,
+  setValue,
+  teamId,
+}) => {
   const selection = useWatch({ control, name: "allowed_mcp_servers_and_groups" }) as
     | { servers?: string[]; accessGroups?: string[]; toolsets?: string[] }
     | undefined;
   const toolPermissions = useWatch({ control, name: "mcp_tool_permissions" }) as Record<string, string[]> | undefined;
+  const owner = useWatch({ control, name: "user_id" });
 
   return (
     <div className="mt-6">
       <MCPToolPermissions
         accessToken={accessToken}
+        teamId={teamId}
+        userId={typeof owner === "string" ? owner : null}
         selectedServers={selection?.servers || []}
         selectedAccessGroups={selection?.accessGroups || []}
         selectedToolsets={selection?.toolsets || []}
@@ -294,6 +303,11 @@ const CreateKey: React.FC<CreateKeyProps> = ({ team, teams, data, addKey, autoOp
   const keyOwner = effectiveKeyOwner(requestedKeyOwner, ownerScope);
   const ownerLimitedToTeamMembers = keyOwner === "another_user" && ownerScope === "team_members";
   const memberOwnerOptions = teamMemberOwnerOptions(selectedCreateKeyTeam, userID);
+  const createKeyOwner = form.watch("user_id");
+  useEffect(() => {
+    form.setValue("allowed_mcp_servers_and_groups", { servers: [], accessGroups: [] });
+    form.setValue("mcp_tool_permissions", {});
+  }, [createKeyOwner, form]);
   const ownerRequiresTeam = keyOwner === "service_account" || ownerLimitedToTeamMembers;
   const handleCancel = () => {
     setIsModalVisible(false);
@@ -527,6 +541,7 @@ const CreateKey: React.FC<CreateKeyProps> = ({ team, teams, data, addKey, autoOp
     }
     // Clear MCP server selection when team changes (available servers may differ)
     form.setValue("allowed_mcp_servers_and_groups", { servers: [], accessGroups: [] });
+    form.setValue("mcp_tool_permissions", {});
   }, [selectedCreateKeyTeam, selectedProjectId, accessToken, userID, userRole, form]);
 
   // Apply deferred model prefill once the available model list arrives.
@@ -1615,6 +1630,7 @@ const CreateKey: React.FC<CreateKeyProps> = ({ team, teams, data, addKey, autoOp
                                 value={control.value as McpSelectorValue | undefined}
                                 accessToken={accessToken}
                                 teamId={selectedCreateKeyTeam?.team_id ?? null}
+                                userId={typeof createKeyOwner === "string" ? createKeyOwner : null}
                                 placeholder="Select MCP servers or access groups (optional)"
                                 allowNoMcpServers
                               />
@@ -1628,6 +1644,7 @@ const CreateKey: React.FC<CreateKeyProps> = ({ team, teams, data, addKey, autoOp
 
                           <McpToolPermissionsField
                             accessToken={accessToken}
+                            teamId={selectedCreateKeyTeam?.team_id ?? null}
                             control={form.control}
                             setValue={form.setValue}
                           />
